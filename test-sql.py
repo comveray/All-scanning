@@ -1,4 +1,5 @@
 ##to check the semgrep action for pull request
+## git diff
 def search():
     code = request.args.get('code')
     conn = sqlite3.connect("data.db")
