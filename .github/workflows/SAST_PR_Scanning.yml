@@ -60,7 +60,7 @@ jobs:
             echo "$changed_files"
 
             # Run semgrep only on the changed files
-            semgrep --json --output $ARTIFACT_PATH --config="p/default"
+            semgrep --json --output $changed_files --config="p/default"
           else
             echo "Semgrep scan is skipped for non-pull request events."
           fi
