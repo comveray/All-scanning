@@ -56,11 +56,9 @@ jobs:
             # Use git diff to get the list of changed files
             #changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
             changed_files=$(git diff origin/master HEAD)
-            echo "the difference is:"
-            echo "$changed_files"
 
             # Run semgrep only on the changed files
-            semgrep --json --output $changed_files --config="p/default"
+            semgrep ci --json --output $changed_files --config="p/default"
           else
             echo "Semgrep scan is skipped for non-pull request events."
           fi
