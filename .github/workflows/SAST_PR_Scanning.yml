@@ -52,7 +52,7 @@ jobs:
             git fetch origin ${{ github.event.before }}:${{ github.event.after }} --depth=1
 
             # Use git diff to get the list of changed files
-            changed_files=$(git diff --name-only ${{ github.event.before }}...${{ github.event.after }})
+            changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
 
             # Run semgrep only on the changed files
             semgrep --json --output $ARTIFACT_PATH --config="p/default"
