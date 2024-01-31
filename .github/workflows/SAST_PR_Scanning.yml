@@ -50,9 +50,14 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Fetch the changes made in the pull request
             git fetch origin ${{ github.event.before }}:${{ github.event.after }} --depth=1
+            echo "github event before: ${{ github.event.before }}"
+            echo "github event after:${{ github.event.after }}"
 
             # Use git diff to get the list of changed files
-            changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
+            #changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
+            changed_files=$(git diff origin/master HEAD)
+            echo "the difference is:"
+            echo "$changed_files"
 
             # Run semgrep only on the changed files
             semgrep --json --output $ARTIFACT_PATH --config="p/default"
