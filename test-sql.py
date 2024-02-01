@@ -1,3 +1,4 @@
+
 # checking GA
 def search():
     code = request.args.get('code')
