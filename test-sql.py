@@ -1,4 +1,4 @@
-# check this out!
+# check this out to see if GA works
 def search():
     code = request.args.get('code')
     conn = sqlite3.connect("data.db")
