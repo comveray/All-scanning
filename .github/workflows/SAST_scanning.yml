@@ -1,16 +1,17 @@
 name: SAST Scanning
-on: 
+on: workflow_dispatch
+#on:
   #run the weekly scan on midnight Saturday
   #schedule: 
   #    - cron:  '0 0 * * 6' 
   #run when changes happens to main/master branch
-  push:
-    branches:
-      - main
-      - master 
+  #push:
+    #branches:
+      #- main
+      #- master 
   # runs when a pull_request event's activity type is opened, edited or reopened
-  pull_request:
-    types: [opened, synchronize, reopened, edited]
+  #pull_request:
+    #types: [opened, synchronize, reopened, edited]
 
 jobs:
   build:
@@ -47,7 +48,7 @@ jobs:
 
       - name: Run full scan with Semgrep 
         run: |
-          semgrep ci --json --output $ARTIFACT_PATH --config="p/default"
+          semgrep scan --json --output $ARTIFACT_PATH --config="p/default"
           ls -alh $ARTIFACT_PATH
         continue-on-error: true
       
