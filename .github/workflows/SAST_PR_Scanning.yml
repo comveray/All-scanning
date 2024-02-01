@@ -51,26 +51,18 @@ jobs:
             # Fetch the changes made in the pull request
             git fetch origin ${{ github.event.before }}:${{ github.event.after }} --depth=1
             latest_commit_sha=$(git rev-parse HEAD)
-
-            # Use git diff to get the list of changed files
-            #changed_files=$(git diff --name-only ${{ github.event.before }}...${{ github.event.after }})
-            edited_files=$(git diff --name-only $latest_commit_sha^..$latest_commit_sha)
-            echo $edited_files
-
-            # Run semgrep only on the changed files
-            #semgrep --include $edited_files --json --output $ARTIFACT_PATH --config="p/default"
             echo "github event before: ${{ github.event.before }}"
             echo "github event after:${{ github.event.after }}"
             echo "github latest commit sha is : $latest_commit_sha"
 
             # Use git diff to get the list of changed files
-
-            #changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
-            edited_files=$(git diff --name-only $latest_commit_sha)
+            #changed_files=$(git diff --name-only ${{ github.event.before }})
+            edited_files=$(git diff --name-only $latest_commit_sh)
+            echo $edited_files
 
             # Run semgrep only on the changed files
             semgrep --include $edited_files --config="p/default" --json --output $ARTIFACT_PATH
-      
+            
           else
             echo "No files edited in the latest commit. Semgrep scan is skipped."
           fi
