@@ -34,7 +34,7 @@ jobs:
           echo "PREV_ARTIFACTS=${WORKFLOWDIR}/prev-artifacts.json" >> $GITHUB_ENV
           echo "GITLEAKS_ARTIFACTS=${WORKFLOWDIR}/secret-af.json" >> $GITHUB_ENV
           echo "LAST_ARTIFACT_ZIP=${WORKFLOWDIR}/last-scans-output.zip" >> $GITHUB_ENV
-    
+      
       - name: check if semgrep installed
         run: |
          if ! command -v semgrep &> /dev/null; then
@@ -54,13 +54,12 @@ jobs:
             echo "github event after:${{ github.event.after }}"
 
             # Use git diff to get the list of changed files
-            #changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
-            changed_files=$(git diff origin/master HEAD)
+            changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
 
             # Run semgrep only on the changed files
-            semgrep ci --json --output $changed_files --config="p/default"
+            semgrep --include $changed_files --config="p/default" --json --output $ARTIFACT_PATH
           else
-            echo "Semgrep scan is skipped for non-pull request events."
+            echo "No files edited in the latest commit. Semgrep scan is skipped."
           fi
           ls -alh $ARTIFACT_PATH
         continue-on-error: true
