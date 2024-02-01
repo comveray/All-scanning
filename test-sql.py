@@ -1,5 +1,5 @@
 
-# checking GA to see
+# checking GA to see if it wotrks
 def search():
     code = request.args.get('code')
     conn = sqlite3.connect("data.db")
