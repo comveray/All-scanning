@@ -56,7 +56,7 @@ jobs:
             echo "github latest commit sha is : $latest_commit_sha"
 
             # Use git diff to get the list of changed files
-            edited_files=$(git diff --name-only ${{ github.event.after }})
+            edited_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }})
             #edited_files=$(git diff --name-only $latest_commit_sha^..$latest_commit_sha)
             echo $edited_files
 
