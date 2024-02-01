@@ -55,6 +55,7 @@ jobs:
             # Use git diff to get the list of changed files
             #changed_files=$(git diff --name-only ${{ github.event.before }}...${{ github.event.after }})
             edited_files=$(git diff --name-only $latest_commit_sha^..$latest_commit_sha)
+            echo $edited_files
 
             # Run semgrep only on the changed files
             #semgrep --include $edited_files --json --output $ARTIFACT_PATH --config="p/default"
@@ -64,7 +65,7 @@ jobs:
 
             # Use git diff to get the list of changed files
             #changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.event.after }})
-            edited_files=$(git diff --name-only $latest_commit_sha^..$latest_commit_sha)
+            edited_files=$(git diff --name-only $latest_commit_sha)
 
             # Run semgrep only on the changed files
             semgrep --include $edited_files --config="p/default" --json --output $ARTIFACT_PATH
