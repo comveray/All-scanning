@@ -56,15 +56,13 @@ jobs:
             edited_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }})
             echo $edited_files
 
-            # Run semgrep only if there are edited files
+            # Run semgrep only if there are edited files. If multiple chnaged files, create an array of --include options for each edited file
             if [ -n "$edited_files" ]; then
-              # Create an array of --include options for each edited file
-              include_options=()
+              semgrep_command="semgrep  --config="p/default" --json --output $ARTIFACT_PATH"
               for file in $edited_files; do
-                include_options+=("--include $file")
+                semgrep_command+=" $file" 
               done
-              # Run semgrep with the created include options
-              semgrep  --config="p/default" "${include_options[@]}"  --json --output $ARTIFACT_PATH
+              eval "$semgrep_command"    
             else
               echo "No files edited in the latest commit. Semgrep scan skipped."
             fi
