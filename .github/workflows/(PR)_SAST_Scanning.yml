@@ -51,7 +51,7 @@ jobs:
               semgrep_command="semgrep  --config="p/default" "
               for file in $edited_files; do
                 semgrep_command+=" $file" 
-                echo "$file"
+                echo "$semgrep_command"
               done
               eval "$semgrep_command --json --output $ARTIFACT_PATH"    
             else
