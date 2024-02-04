@@ -48,7 +48,7 @@ jobs:
             echo "changed files list: $edited_files"
             # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
             if [ -n "$edited_files" ]; then
-              semgrep_command="semgrep  --config="p/default" "
+              semgrep_command="semgrep --config="p/default" "
               for file in $edited_files; do
                 semgrep_command+=" $file" 
                 echo "$semgrep_command"
