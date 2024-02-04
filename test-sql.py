@@ -1,4 +1,4 @@
-#this is a test for semgrep GA to see
+#this is a test for semgrep GA to see if it works
 def search():
     code = request.args.get('code')
     conn = sqlite3.connect("data.db")
