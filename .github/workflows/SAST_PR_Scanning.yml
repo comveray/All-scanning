@@ -64,7 +64,6 @@ jobs:
           else
             echo "No files edited in the latest commit. Semgrep scan skipped."
           fi
-        fi
         continue-on-error: true
       
       - name: Processing scan result (Please set the reporting severity level in GitHub Action Variables settings)
