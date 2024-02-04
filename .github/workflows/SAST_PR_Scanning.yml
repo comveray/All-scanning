@@ -59,7 +59,7 @@ jobs:
 
             # Use git diff to get the list of changed files
             git config advice.objectNameWarning false
-            edited_files=$(git diff --name-only $github.event.before $github.sha)
+            edited_files=$(git diff --name-only $github_event_before $github_sha)
             echo $edited_files
 
             # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
@@ -108,6 +108,13 @@ jobs:
           echo "- Number of vulnerabilities detected in this scan: $(jq '.results| length' $ARTIFACT_PATH)  " >> $SUM_FILE
         continue-on-error: true
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: |
+            ${{ env.CODE_SCANNING_FILE }}
+            ${{ env.ARTIFACT_PATH }}
       - name: Clean up
         run: |
           rm -rf $WORKFLOWDIR
