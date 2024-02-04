@@ -15,6 +15,12 @@ on:
 jobs:
   build:
     runs-on: self-hosted
+    env:
+      github_event_before: ${{ github.event.before }}
+      github_sha: ${{ github.sha }}
+      github_base_ref: ${{ github.base_ref }}
+      github_pull_request: ${{ github.event.pull_request.head.ref }}
+      github_event: ${{ github.event_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v2
@@ -46,14 +52,8 @@ jobs:
         continue-on-error: true
 
       - name: Run full scan with Semgrep 
-        env:
-          github_event_before: ${{ github.event.before }}
-          github_sha: ${{ github.sha }}
-          github_base_ref: ${{ github.base_ref }}
-          github_pull_request: ${{ github.event.pull_request.head.ref }}
-          github_event: ${{ github.event_name }}
         run: |
-          if [ "$github.event" == "pull_request" ]; then
+          if [ $github.event == "pull_request" ]; then
             # Fetch the changes made in the pull request
             git fetch origin $github_base_ref $github_pull_request --depth=1   
 
