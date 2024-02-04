@@ -324,5 +324,9 @@ OWASP Juice Shop and any contributions are Copyright © by Bjoern Kimminich & th
 ## secrets added to the appsettings.json
 
 ```
-testing
+# test
+here's one:
+## secret
+`api_key=JPkxhc9cGFv35OWu267fsx8R6uZj29GL`
+
 ```
