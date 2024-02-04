@@ -47,22 +47,23 @@ jobs:
       - name: Run Semgrep scan on the modified files in the Pull request event 
         run: |
           if [ $github_event == "pull_request" ]; then
-          # Fetch the changes made in the pull request
-          git fetch origin $github_base_ref $github_pull_request --depth=1   
-          # Use git diff to get the list of changed files
-          git config advice.objectNameWarning false
-          edited_files=$(git diff --name-only $github_event_before $github_sha)
-          echo "changed files list: $edited_files"
-          # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
-          if [ -n "$edited_files" ]; then
-            semgrep_command="semgrep  --config="p/default" "
-            for file in $edited_files; do
-              semgrep_command+=" $file" 
-              echo "$file"
-            done
-            eval "$semgrep_command --json --output $ARTIFACT_PATH"    
-          else
-            echo "No files edited in the latest commit. Semgrep scan skipped."
+            # Fetch the changes made in the pull request
+            git fetch origin $github_base_ref $github_pull_request --depth=1   
+            # Use git diff to get the list of changed files
+            git config advice.objectNameWarning false
+            edited_files=$(git diff --name-only $github_event_before $github_sha)
+            echo "changed files list: $edited_files"
+            # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
+            if [ -n "$edited_files" ]; then
+              semgrep_command="semgrep  --config="p/default" "
+              for file in $edited_files; do
+                semgrep_command+=" $file" 
+                echo "$file"
+              done
+              eval "$semgrep_command --json --output $ARTIFACT_PATH"    
+            else
+              echo "No files edited in the latest commit. Semgrep scan skipped."
+            fi
           fi
         continue-on-error: true
       
