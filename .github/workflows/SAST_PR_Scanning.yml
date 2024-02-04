@@ -78,6 +78,7 @@ jobs:
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
               cat $ANALYSE_FILE    
               # Exit with an error code to mark the check as failed
+              rm -rf $WORKFLOWDIR
               exit 1 
             else 
               echo "There are no issues with severity levels - "${{ vars.ISSUE_SEVERITY  }}", found in this scan. "
@@ -92,6 +93,7 @@ jobs:
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE  
               cat $ANALYSE_FILE 
               # Exit with an error code to mark the check as failed
+              rm -rf $WORKFLOWDIR
               exit 1 
             else 
               echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
@@ -100,11 +102,7 @@ jobs:
           echo "- Repository: ${{ github.repository }}\n- Scan Status: Completed\n- Completion Time: $(date)" >> $SUM_FILE
           echo "- Number of files being scanned: $(jq '.paths.scanned | length' $ARTIFACT_PATH)  " >> $SUM_FILE
           echo "- Number of vulnerabilities detected in this scan: $(jq '.results| length' $ARTIFACT_PATH)  " >> $SUM_FILE
-        continue-on-error: true
-
-      - name: Clean up
-        run: |
-          rm -rf $WORKFLOWDIR
+          
           
 
       
