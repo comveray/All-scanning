@@ -53,6 +53,7 @@ jobs:
 
       - name: Run full scan with Semgrep 
         run: |
+          echo  "$github.event"
           if [ $github.event == "pull_request" ]; then
             # Fetch the changes made in the pull request
             git fetch origin $github_base_ref $github_pull_request --depth=1   
