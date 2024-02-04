@@ -1,4 +1,4 @@
-# check the GA to see if it pick up anything
+# check the GA to see if it pick up anything!
 def search():
     My_variable = "password:thsdbjwbdjwbk46757"
     code = request.args.get('code')
