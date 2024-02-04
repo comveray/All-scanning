@@ -49,13 +49,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Fetch the changes made in the pull request
-            git fetch origin ${{ github.event.before }}:${{ github.event.after }} --depth=1     
+            #git fetch origin ${{ github.event.before }}:${{ github.event.after }} --depth=1     
             echo "github event before: ${{ github.event.before }}"
             echo "github event after:${{ github.event.after }}"
 
             # Use git diff to get the list of changed files
             git config advice.objectNameWarning false
-            edited_files=$(git diff-tree --name-only ${{ github.event.before }} ${{ github.event.after }})
+            git diff --name-only ${{ github.event.before }} ${{ github.sha }}
+            edited_files=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
             echo $edited_files
 
             # Run semgrep only if there are edited files
