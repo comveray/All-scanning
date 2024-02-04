@@ -1,6 +1,6 @@
 # check the GA to see if it pick up anything!
 def search():
-    My_variable = "password:SuprSecret1234!"
+    My_variable = "password:SuprSecret12344!"
     code = request.args.get('code')
     conn = sqlite3.connect("data.db")
     c = conn.cursor()
