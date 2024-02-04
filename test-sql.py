@@ -14,6 +14,6 @@ def search():
     except sqlite3.Error as e:
         return str(e) + "<br>{statement}
 
-password = 'VnDduv#7862-9s8hdv%2hMuh'
-aws_akid = 'AKIAIOSFODNN7N0EFXMP'
-aws_sk = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYBNA2dBkDTiv'
+password1 = 'VnDduv#7862-9s8hdv%2hMuh'
+aws_akid1 = 'AKIAIOSFODNN7N0EFXMP'
+aws_sk1 = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYBNA2dBkDTiv'
