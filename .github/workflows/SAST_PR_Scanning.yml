@@ -70,7 +70,7 @@ jobs:
           fi
         continue-on-error: true
       
-      - name: Processing SAST result (Please set the reporting severity level in GitHub Action Variables settings)
+      - name: Processing scan result (Please set the reporting severity level in GitHub Action Variables settings)
         run : |
           if [ -n "${{ vars.ISSUE_SEVERITY  }}" ]; then
             empty_issue_list=$(jq '.results[] | select(.extra.metadata.impact | IN(${{ vars.ISSUE_SEVERITY }})) ' $ARTIFACT_PATH | wc -l)
