@@ -55,7 +55,7 @@ jobs:
 
             # Use git diff to get the list of changed files
             git config advice.objectNameWarning false
-            edited_files=$(git diff --name-only HEAD HEAD~1)
+            edited_files=$(git diff-tree --name-only ${{ github.event.before }} ${{ github.event.after }})
             echo $edited_files
 
             # Run semgrep only if there are edited files
