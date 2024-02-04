@@ -1,14 +1,6 @@
 name: SAST Scanning on PR
 on: 
-  #run the weekly scan on midnight Saturday
-  #schedule: 
-  #    - cron:  '0 0 * * 6' 
-  #run when changes happens to main/master branch
-  # push:
-    #branches:
-    #  - main
-     # - master 
-  # runs when a pull_request event's activity type is opened, edited or reopened
+  #workflow will run whenever a pull request is opened, synchronized(new commit pushed),reopened,or edited  
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
@@ -17,12 +9,11 @@ jobs:
     runs-on: self-hosted
     env:
       github_event_before: ${{ github.event.before }}
-      github_event_after: ${{ github.event.after }}
       github_sha: ${{ github.sha }}
-      github_event: ${{ github.event_name }}
       github_base_ref: ${{ github.base_ref }}
       github_pull_request: ${{ github.event.pull_request.head.ref }}
-      LATEST_COMMIT_IN_PR: ${{ github.event.pull_request.head.sha }}
+      github_event: ${{ github.event_name }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v2
@@ -34,14 +25,16 @@ jobs:
         run: |
           echo "CODE_SCANNING_FILE=${WORKFLOWDIR}/github_scan_result.json" >> $GITHUB_ENV
           echo "ARTIFACT_PATH=${WORKFLOWDIR}/semgrep_scan_result.json" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME=SAST-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=SAST-PR-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
+
           echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
           echo "SUM_FILE=${WORKFLOWDIR}/scan_summary.txt" >> $GITHUB_ENV
+
           echo "PREV_ARTIFACTS=${WORKFLOWDIR}/prev-artifacts.json" >> $GITHUB_ENV
           echo "GITLEAKS_ARTIFACTS=${WORKFLOWDIR}/secret-af.json" >> $GITHUB_ENV
           echo "LAST_ARTIFACT_ZIP=${WORKFLOWDIR}/last-scans-output.zip" >> $GITHUB_ENV
       
-      - name: check if semgrep installed
+      - name: check if Semgrep installed
         run: |
          if ! command -v semgrep &> /dev/null; then
            echo "semgrep is not installed, installing..."
@@ -51,36 +44,28 @@ jobs:
          fi
         continue-on-error: true
 
-      - name: Run full scan with Semgrep 
+      - name: Run Semgrep scan on the modified files in the Pull request event 
         run: |
           if [ $github_event == "pull_request" ]; then
-            # Pull request 
-            # 'github.event.before/after' and 'github.event.pull_request.base.sha' are inconsistent for PRs 
-            # Find the commit where the PR branch was forked from the base branch, and fetch the changes made
+            # Fetch the changes made in the pull request
             git fetch origin $github_base_ref $github_pull_request --depth=1   
-            FORK_POINT=$( git show-branch --merge-base "origin/$github_base_ref" "origin/$github_pull_request" )
-            CHANGED_FILES=$( git diff --name-only $FORK_POINT $LATEST_COMMIT_IN_PR )
-            echo "Changes for PR. Diff between $FORK_POINT and $LATEST_COMMIT_IN_PR."
-          else
-            # Push event
-            # Use git diff to get the list of changed files between 'github.event.before' and 'after' (including all commits of the current push event)
-            CHANGED_FILES=$(git diff --name-only $github_event_before $github_event_after)
-            echo "Changes for PUSH. Diff between $github_event_before and $github_event_after"
-          fi
 
-          # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
-          if [ -n "$CHANGED_FILES" ]; then
-            # Print result for verification
-            echo "Changed files: $CHANGED_FILES"
-            semgrep_command="semgrep  --config="p/default" --json --output $ARTIFACT_PATH"
-            for file in $CHANGED_FILES; do
-              semgrep_command+=" $file" 
-            done
-            eval "$semgrep_command"    
-          else
-            echo "No files edited in the latest commit. Semgrep scan skipped."
-          fi
+            # Use git diff to get the list of changed files
+            git config advice.objectNameWarning false
+            edited_files=$(git diff --name-only $github_event_before $github_sha)
+            echo $edited_files
 
+            # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
+            if [ -n "$edited_files" ]; then
+              semgrep_command="semgrep  --config="p/default" --json --output $ARTIFACT_PATH"
+              for file in $edited_files; do
+                semgrep_command+=" $file" 
+              done
+              eval "$semgrep_command"    
+            else
+              echo "No files edited in the latest commit. Semgrep scan skipped."
+            fi
+          fi
         continue-on-error: true
       
       - name: Processing SAST result (Please set the reporting severity level in GitHub Action Variables settings)
@@ -93,6 +78,8 @@ jobs:
               jq_filter='.results[] | select(.extra.metadata.impact | IN(${{ vars.ISSUE_SEVERITY }})) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
               cat $ANALYSE_FILE    
+              # Exit with an error code to mark the check as failed
+              exit 1 
             else 
               echo "There are no issues with severity levels - "${{ vars.ISSUE_SEVERITY  }}", found in this scan. "
             fi 
@@ -105,6 +92,8 @@ jobs:
               jq_filter='.results[] | select(.extra.metadata.impact | IN("HIGH", "CRITICAL")) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE  
               cat $ANALYSE_FILE 
+              # Exit with an error code to mark the check as failed
+              exit 1 
             else 
               echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
             fi
@@ -114,13 +103,6 @@ jobs:
           echo "- Number of vulnerabilities detected in this scan: $(jq '.results| length' $ARTIFACT_PATH)  " >> $SUM_FILE
         continue-on-error: true
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: |
-            ${{ env.CODE_SCANNING_FILE }}
-            ${{ env.ARTIFACT_PATH }}
       - name: Clean up
         run: |
           rm -rf $WORKFLOWDIR
