@@ -1,1 +1,0 @@
-{"errors": [{"code": 2, "level": "error", "message": "File not found: .github/workflows/SAST_PR_Scanning.yml\ntest-sql.py", "type": "SemgrepError"}], "paths": {"scanned": []}, "results": [], "skipped_rules": [], "version": "1.56.0"}
