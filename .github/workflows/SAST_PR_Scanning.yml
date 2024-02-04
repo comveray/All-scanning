@@ -55,7 +55,7 @@ jobs:
 
             # Use git diff to get the list of changed files
             git config advice.objectNameWarning false
-            edited_files=$(git diff --name-only HEAD -- HEAD~1)
+            edited_files=$(git diff --name-only HEAD HEAD~1)
             echo $edited_files
 
             # Run semgrep only if there are edited files
@@ -65,7 +65,6 @@ jobs:
               for file in $edited_files; do
                 include_options+=("--include $file")
               done
-  
               # Run semgrep with the created include options
               semgrep  "${include_options[@]}" --config="p/default" --json --output $ARTIFACT_PATH
             else
