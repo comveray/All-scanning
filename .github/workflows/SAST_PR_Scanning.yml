@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v2
-        with:
-          fetch-depth: 0
 
       - name: Create temporary directory
         run: echo "WORKFLOWDIR=$(mktemp -d)" >> $GITHUB_ENV
@@ -51,14 +49,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Fetch the changes made in the pull request
-            #git fetch origin ${{ github.event.before }}:${{ github.event.after }} --depth=1     
+            git fetch origin ${{ github.base_ref }} ${{ github.event.pull_request.head.ref }} --depth=1   
             echo "github event before: ${{ github.event.before }}"
             echo "github event after:${{ github.event.after }}"
 
             # Use git diff to get the list of changed files
             git config advice.objectNameWarning false
             echo "running git diff using github action env"
-            git diff --name-only ${{ github.event.before }}..${{ github.sha }}
+            edited_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }})
             echo $edited_files
 
             # Run semgrep only if there are edited files
