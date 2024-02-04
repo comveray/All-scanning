@@ -1,0 +1,22 @@
+[
+ {
+  "Description": "Private Key",
+  "StartLine": 1,
+  "EndLine": 27,
+  "StartColumn": 1,
+  "EndColumn": 29,
+  "Match": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA68SlXtdvW8fqYzUs7XPWWdzbgdZUF5rr0TO5Za/tfv7mO981\nfU0dnSPIfkPx5W1inceOkOj4S6f2SwuliuFfp4bAREmI3weZSFckyaYgyE+mJdPE\nVzQ3riYDsi2iR/BEpB40aho/jqBTQu8jIwDGGwlxF0XedWDSLn3zfM2Ga0LOd44A\n/psCNia91cPT+JTrGyTg/vVpESgJqlK/MmZPNclnymkoyiGQiBcUpKexeKLq3UyW\nlkiQdByAwxxCiyW4UjPzwYfMTz9vPCPzqVH97/y4KYVuc5dmOaDH1GI+ZtRFEh5S\nsFdntMoQ/1pEejwoTZsTStHMzPBFS9gGUx+QdwIDAQABAoIBAQDXRuJ9HBepZXym\ng4p3cvr5aMnh3xM/zoyepC0YJbCk8hjF+IT92ak9r8vFR0Mb62pNiUarGJ6HbmFc\nmtDYY/uUm1z5vW9Fvsl+nVuQ6KksXlXmWlwACEUDNeDQFA0GxOPYO2A+taLtF4WP\nK44Yyv8Y9uEVkA2VfgfMveLTRVMEoeXzU/VHfOvgnf6y9y77V4juLREkjwkbGTnI\ngpAOsmNDPdy+43mVp63QvVaSFa3gDly3Ak84Ta9P7TSTjGwtS3qnJwODu9h/2ty7\n/aBoGjw9G/sP1DsCMCJgx4rrrpW1RlPp/bOeKZQqu7rHjUX9f9oRSpW0bGjwq+gP\nSGiJj42hAoGBAPk6uOEOfQzN8imdVslTiXyvIn+FPXzYwkCq5Lkv2o8udGLEnTKl\n7Nk0G4pfGXrttOmzNpndo+4jRXe0ceMssjin6dkl6MufD2BFFgls9393oZJ4CECP\nau4EPKXMe/xkzz99CilgQ3r1v0DN/hBl41cd0xi8wJjwFBTSob7YkGTnAoGBAPIs\nTpZnC27s+3mPYHow/1Ca/7fuZVzseXXPEMK1EKjHfsXieOkcLeQEwNg3EbKaBYAV\nJjRBdD0XYUFpmDAbVcVk2bAgDKfNGNBEa6YLqJQ2uNODgOOUodakPjxCIjzxflhd\nV6CN3lQcK6hWdXMsJWocoDF9Hxz0JEQsQd589XXxAoGAd+LEbhYPFyq180ipJ50U\nhLKmMJtCMZz/DCZocaBQTRG2kJAtYeCo5u6G1O/cDOLtZIF9oVQZeALldqiJJBMr\nA8/Z0EfJDLHNrqxs5knRYDKGuTMeHRggArBtEAAmIAnKG6slSTPyIeK2hhDQxsiM\nLCq/kaWyK59IuZ98iJYaFz8CgYA0LSehcAIenCBySFnY+cWIcFy4HDzqkGh64WoT\nCT/VnWXK7MhwMQoSHpQOAY9mk5irx+K7T37jyq3Bkiaf9sO8C8Z7E+ymGqJF/PfU\nhp6DkGax65tRbSyROkHOadFGoCFAmJvQk8BbDta5JieX8OL+wbwh7XtOmatWpNJs\nRS/9gQKBgQDBbcmigS5ROXYTE8XR3j5iXKETK3YjTksTPEtgRjIxfE44dmB8291S\nXSm89IbAsAqzbAfIKCAURV8wJ0HvD9UiimdUxn6yqX6q6UGvBuInvCI6cZ4U6PWM\nb0Si6/hMiINTpqG8RT9rRj8kCF383y8AGMQle7wbUJzxOJbKt43Gfw==\n-----END RSA PRIVATE KEY----",
+  "Secret": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA68SlXtdvW8fqYzUs7XPWWdzbgdZUF5rr0TO5Za/tfv7mO981\nfU0dnSPIfkPx5W1inceOkOj4S6f2SwuliuFfp4bAREmI3weZSFckyaYgyE+mJdPE\nVzQ3riYDsi2iR/BEpB40aho/jqBTQu8jIwDGGwlxF0XedWDSLn3zfM2Ga0LOd44A\n/psCNia91cPT+JTrGyTg/vVpESgJqlK/MmZPNclnymkoyiGQiBcUpKexeKLq3UyW\nlkiQdByAwxxCiyW4UjPzwYfMTz9vPCPzqVH97/y4KYVuc5dmOaDH1GI+ZtRFEh5S\nsFdntMoQ/1pEejwoTZsTStHMzPBFS9gGUx+QdwIDAQABAoIBAQDXRuJ9HBepZXym\ng4p3cvr5aMnh3xM/zoyepC0YJbCk8hjF+IT92ak9r8vFR0Mb62pNiUarGJ6HbmFc\nmtDYY/uUm1z5vW9Fvsl+nVuQ6KksXlXmWlwACEUDNeDQFA0GxOPYO2A+taLtF4WP\nK44Yyv8Y9uEVkA2VfgfMveLTRVMEoeXzU/VHfOvgnf6y9y77V4juLREkjwkbGTnI\ngpAOsmNDPdy+43mVp63QvVaSFa3gDly3Ak84Ta9P7TSTjGwtS3qnJwODu9h/2ty7\n/aBoGjw9G/sP1DsCMCJgx4rrrpW1RlPp/bOeKZQqu7rHjUX9f9oRSpW0bGjwq+gP\nSGiJj42hAoGBAPk6uOEOfQzN8imdVslTiXyvIn+FPXzYwkCq5Lkv2o8udGLEnTKl\n7Nk0G4pfGXrttOmzNpndo+4jRXe0ceMssjin6dkl6MufD2BFFgls9393oZJ4CECP\nau4EPKXMe/xkzz99CilgQ3r1v0DN/hBl41cd0xi8wJjwFBTSob7YkGTnAoGBAPIs\nTpZnC27s+3mPYHow/1Ca/7fuZVzseXXPEMK1EKjHfsXieOkcLeQEwNg3EbKaBYAV\nJjRBdD0XYUFpmDAbVcVk2bAgDKfNGNBEa6YLqJQ2uNODgOOUodakPjxCIjzxflhd\nV6CN3lQcK6hWdXMsJWocoDF9Hxz0JEQsQd589XXxAoGAd+LEbhYPFyq180ipJ50U\nhLKmMJtCMZz/DCZocaBQTRG2kJAtYeCo5u6G1O/cDOLtZIF9oVQZeALldqiJJBMr\nA8/Z0EfJDLHNrqxs5knRYDKGuTMeHRggArBtEAAmIAnKG6slSTPyIeK2hhDQxsiM\nLCq/kaWyK59IuZ98iJYaFz8CgYA0LSehcAIenCBySFnY+cWIcFy4HDzqkGh64WoT\nCT/VnWXK7MhwMQoSHpQOAY9mk5irx+K7T37jyq3Bkiaf9sO8C8Z7E+ymGqJF/PfU\nhp6DkGax65tRbSyROkHOadFGoCFAmJvQk8BbDta5JieX8OL+wbwh7XtOmatWpNJs\nRS/9gQKBgQDBbcmigS5ROXYTE8XR3j5iXKETK3YjTksTPEtgRjIxfE44dmB8291S\nXSm89IbAsAqzbAfIKCAURV8wJ0HvD9UiimdUxn6yqX6q6UGvBuInvCI6cZ4U6PWM\nb0Si6/hMiINTpqG8RT9rRj8kCF383y8AGMQle7wbUJzxOJbKt43Gfw==\n-----END RSA PRIVATE KEY----",
+  "File": "vagrant/.vagrant/machines/default/virtualbox/private_key",
+  "SymlinkFile": "",
+  "Commit": "48174b3e4188811db7b6f128cbf11da7fd9cde82",
+  "Entropy": 6.028339,
+  "Author": "Björn Kimminich",
+  "Email": "bjoern.kimminich@owasp.org",
+  "Date": "2017-03-03T01:12:32Z",
+  "Message": "Include latest changes",
+  "Tags": [],
+  "RuleID": "private-key",
+  "Fingerprint": "48174b3e4188811db7b6f128cbf11da7fd9cde82:vagrant/.vagrant/machines/default/virtualbox/private_key:private-key:1"
+ }
+]

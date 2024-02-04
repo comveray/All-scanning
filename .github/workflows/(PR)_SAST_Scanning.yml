@@ -23,16 +23,11 @@ jobs:
 
       - name: Create environmental variables 
         run: |
-          echo "CODE_SCANNING_FILE=${WORKFLOWDIR}/github_scan_result.json" >> $GITHUB_ENV
           echo "ARTIFACT_PATH=${WORKFLOWDIR}/semgrep_scan_result.json" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=SAST-PR-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
 
           echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
           echo "SUM_FILE=${WORKFLOWDIR}/scan_summary.txt" >> $GITHUB_ENV
-
-          echo "PREV_ARTIFACTS=${WORKFLOWDIR}/prev-artifacts.json" >> $GITHUB_ENV
-          echo "GITLEAKS_ARTIFACTS=${WORKFLOWDIR}/secret-af.json" >> $GITHUB_ENV
-          echo "LAST_ARTIFACT_ZIP=${WORKFLOWDIR}/last-scans-output.zip" >> $GITHUB_ENV
       
       - name: check if Semgrep installed
         run: |
@@ -76,7 +71,7 @@ jobs:
               echo "There are vulnerabilities with severity levels: "${{ vars.ISSUE_SEVERITY  }}"." 
               jq_filter='.results[] | select(.extra.metadata.impact | IN(${{ vars.ISSUE_SEVERITY }})) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
-              cat $ANALYSE_FILE    
+              echo cat $ANALYSE_FILE    
               # Exit with an error code to mark the check as failed
               rm -rf $WORKFLOWDIR
               exit 1 
@@ -91,7 +86,7 @@ jobs:
               echo "There are There are vulnerabilities with severity levels 'HIGH' or 'CRITICAL'."
               jq_filter='.results[] | select(.extra.metadata.impact | IN("HIGH", "CRITICAL")) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE  
-              cat $ANALYSE_FILE 
+              echo $ANALYSE_FILE 
               # Exit with an error code to mark the check as failed
               rm -rf $WORKFLOWDIR
               exit 1 
@@ -99,9 +94,6 @@ jobs:
               echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
             fi
           fi
-          echo "- Repository: ${{ github.repository }}\n- Scan Status: Completed\n- Completion Time: $(date)" >> $SUM_FILE
-          echo "- Number of files being scanned: $(jq '.paths.scanned | length' $ARTIFACT_PATH)  " >> $SUM_FILE
-          echo "- Number of vulnerabilities detected in this scan: $(jq '.results| length' $ARTIFACT_PATH)  " >> $SUM_FILE
           
           
 
