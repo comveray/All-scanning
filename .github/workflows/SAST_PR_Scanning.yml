@@ -51,17 +51,18 @@ jobs:
           github_sha: ${{ github.sha }}
           github_base_ref: ${{ github.base_ref }}
           github_pull_request: ${{ github.event.pull_request.head.ref }}
+          github_event: ${{ github.event_name }}
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
+          if [ "$github.event" == "pull_request" ]; then
             # Fetch the changes made in the pull request
             git fetch origin $github_base_ref $github_pull_request --depth=1   
 
             # Use git diff to get the list of changed files
             git config advice.objectNameWarning false
-            edited_files=$(git diff --name-only $github.event.before..$github.sha)
+            edited_files=$(git diff --name-only $github.event.before $github.sha)
             echo $edited_files
 
-            # Run semgrep only if there are edited files. If multiple chnaged files, create an array of --include options for each edited file
+            # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
             if [ -n "$edited_files" ]; then
               semgrep_command="semgrep  --config="p/default" --json --output $ARTIFACT_PATH"
               for file in $edited_files; do
