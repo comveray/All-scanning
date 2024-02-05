@@ -61,7 +61,6 @@ jobs:
               echo "There are vulnerabilities with severity levels: "${{ vars.ISSUE_SEVERITY  }}"." 
               jq_filter='.results[] | select(.extra.metadata.impact | IN(${{ vars.ISSUE_SEVERITY }})) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
-              cat $ANALYSE_FILE    
             else 
               echo "There are no issues with severity levels - "${{ vars.ISSUE_SEVERITY  }}", found in this scan. "
             fi 
@@ -73,7 +72,6 @@ jobs:
               echo "There are There are vulnerabilities with severity levels 'HIGH' or 'CRITICAL'."
               jq_filter='.results[] | select(.extra.metadata.impact | IN("HIGH", "CRITICAL")) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE  
-              cat $ANALYSE_FILE 
             else 
               echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
             fi
