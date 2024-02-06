@@ -1,0 +1,98 @@
+name: SAST Scanning on PR
+on: 
+  #workflow will run whenever a pull request is opened, synchronized(new commit pushed),reopened,or edited  
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      github_event_before: ${{ github.event.before }}
+      github_sha: ${{ github.sha }}
+      github_base_ref: ${{ github.base_ref }}
+      github_pull_request: ${{ github.event.pull_request.head.ref }}
+      github_event: ${{ github.event_name }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v2
+
+      - name: Create temporary directory
+        run: echo "WORKFLOWDIR=$(mktemp -d)" >> $GITHUB_ENV
+
+      - name: Create environmental variables 
+        run: |
+          echo "ARTIFACT_PATH=${WORKFLOWDIR}/semgrep_scan_result.json" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=SAST-PR-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
+      
+      - name: check if Semgrep installed
+        run: |
+         if ! command -v semgrep &> /dev/null; then
+           echo "semgrep is not installed, installing..."
+           python3 -m pip install semgrep  
+         else
+           echo "semgrep is already installed"
+         fi
+        continue-on-error: true
+
+      - name: Run Semgrep scan on the modified files in the Pull request event 
+        run: |
+          if [ $github_event == "pull_request" ]; then
+            # Fetch the changes made in the pull request
+            git fetch origin $github_base_ref $github_pull_request --depth=1   
+            # Use git diff to get the list of changed files
+            git config advice.objectNameWarning false
+            edited_files=$(git diff --name-only $github_event_before $github_sha)
+            echo "changed files list: $edited_files"
+            # Run semgrep only if there are edited files. If multiple edited files, append these files to semgrep command
+            if [ -n "$edited_files" ]; then
+              semgrep_command="semgrep --config="p/default" "
+              for file in $edited_files; do
+                semgrep_command+=" $file" 
+                echo "$semgrep_command"
+              done
+              eval "$semgrep_command --json --output $ARTIFACT_PATH"    
+            else
+              echo "No files edited in the latest commit. Semgrep scan skipped."
+            fi
+          fi
+        continue-on-error: true
+      
+      - name: Processing scan result (Please set the reporting severity level in GitHub Action Variables settings)
+        run : |
+          if [ -n "${{ vars.ISSUE_SEVERITY  }}" ]; then
+            empty_issue_list=$(jq '.results[] | select(.extra.metadata.impact | IN(${{ vars.ISSUE_SEVERITY }})) ' $ARTIFACT_PATH | wc -l)
+            echo "empty_issue_list=$empty_issue_list" >> $GITHUB_ENV
+            if [ $empty_issue_list != 0 ]; then
+              echo "There are vulnerabilities with severity levels: "${{ vars.ISSUE_SEVERITY  }}"." 
+              jq_filter='.results[] | select(.extra.metadata.impact | IN(${{ vars.ISSUE_SEVERITY }})) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
+              jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
+              cat $ANALYSE_FILE    
+              # Exit with an error code to mark the check as failed
+              rm -rf $WORKFLOWDIR
+              exit 1 
+            else 
+              echo "There are no issues with severity levels - "${{ vars.ISSUE_SEVERITY  }}", found in this scan. "
+            fi 
+          else
+            echo "Please customise the severity filtering variable for SAST scan result to the desired level. As of now, the scan results will be filtered to only show CRTICAL or HIGH severity impact only. "
+            empty_issue_list=$(jq '.results[] | select(.extra.metadata.impact | IN("HIGH", "CRITICAL"))' $ARTIFACT_PATH | wc -l)
+            echo "empty_issue_list=$empty_issue_list" >> $GITHUB_ENV
+            if [ $empty_issue_list != 0 ]; then
+              echo "There are There are vulnerabilities with severity levels 'HIGH' or 'CRITICAL'."
+              jq_filter='.results[] | select(.extra.metadata.impact | IN("HIGH", "CRITICAL")) |  "- RuleID \(.extra.metadata."semgrep.dev".rule.rule_id) has detected a potential \(.extra.metadata.impact) impact \(.extra.metadata.vulnerability_class[0]) vulnerability in the \(.path) file (start from line \(.start.line)). "'
+              jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE  
+              echo $ANALYSE_FILE 
+              # Exit with an error code to mark the check as failed
+              rm -rf $WORKFLOWDIR
+              exit 1 
+            else 
+              echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
+            fi
+          fi
+          
+          
+
+      

@@ -1,0 +1,180 @@
+name: SCA Scanning
+on: workflow_dispatch
+#on:
+  #run the weekly scan on midnight Saturday
+  #schedule: 
+  #    - cron:  '0 0 * * 6' 
+  #run when changes happens to main/master branch
+  #push:
+    #branches:
+      #- main
+      #- master 
+  # runs when a pull_request event's activity type is opened, edited or reopened
+  #pull_request:
+    #types: [opened, synchronize, reopened, edited]
+
+#require for dependabot alerts. Delete later when removing dependabot alert querying       
+permissions: 
+  security-events: read 
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v2
+
+      - name: Create temporary directory
+        run: echo "WORKFLOWDIR=$(mktemp -d)" >> $GITHUB_ENV
+
+      - name: Create environmental variables 
+        run: |
+          echo "SBOM_FILE=${WORKFLOWDIR}/dg_spdx_sbom.json" >> $GITHUB_ENV
+          echo "SBOM_ANALYSE_FILE=${WORKFLOWDIR}/sbom_file_results.json" >> $GITHUB_ENV
+          echo "DEPENDABOT_FILE=${WORKFLOWDIR}/dependabot_alerts.json" >> $GITHUB_ENV
+
+          echo "TRIVY_JSON_FILE=${WORKFLOWDIR}/trivy_scan_json_result.json" >> $GITHUB_ENV
+          echo "TRIVY_TABLE_FILE=${WORKFLOWDIR}/trivy_scan_table_result.txt" >> $GITHUB_ENV
+
+          echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
+          echo "SUM_FILE=${WORKFLOWDIR}/scan_summary.txt" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=SCA-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Get SPDX SBOM file from dependency graph if enabled 
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom)
+          if [[ $response != 200 ]]; then
+            echo "Please enable Dependency graph for this repo"
+          else
+            # get Dependency Graph SBOM
+            curl -L -o $SBOM_FILE \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom
+
+            # parsing the fetched SBOM JSON file and transforming it into SPDX SBOM format so trivy can process
+            cat $SBOM_FILE  | jq '.sbom' > $SBOM_ANALYSE_FILE
+            sed -i -e '${/^$/d;}' $SBOM_ANALYSE_FILE
+          fi
+        continue-on-error: true
+      
+      - name: Generate IAT for Github App
+        uses: actions/create-github-app-token@c4fa18d55c5d49e6a2793e351ea4938322c61072 #v1
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          # create a token for selected repositories in the current owner's installation
+          owner: ${{ github.repository_owner }}
+          repositories: "All-scanning"
+
+      - name: Get dependabot alert if enabled 
+        run: |
+          status_code=$(curl -LI -o /dev/null -w '%{http_code}\n' -s \
+          --url "https://api.github.com/repos/comveray/all-scanning/dependabot/alerts" \
+          --header "Accept: application/vnd.github+json" \
+          --header "Authorization: Bearer ghs_WJYTKfWs5qjBByZ5FZR4cAqhTBSjqT1B2wbD" \
+          --header "X-GitHub-Api-Version: 2022-11-28")
+
+          # require GitHub app installation token or PAT
+          curl --request GET -L -o $DEPENDABOT_FILE \
+          --url https://api.github.com/repos/${{ github.repository }}/dependabot/alerts \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ steps.app-token.outputs.token }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" 
+        continue-on-error: true
+
+    
+      - name: checking if trivy is installed
+        run: |
+          # check if trivy is installed, if not then installed 
+          if ! command -v trivy &> /dev/null; then
+            echo "trivy is not installed, installing..."
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin  
+          else
+            echo "trivy is already installed"
+            #check if trivy is up-to-date
+            var1=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | awk '/tag_name/ {gsub(/v/,"",$2); print $2}')
+            var2=$(trivy -v | awk -F ': ' '/Version:/ { print $2; exit }')
+            if [ "$var1" != "$var2" ]; then
+            echo "Trivy is not the latest version. Please update trivy with: sudo apt-get update && sudo apt-get install -y trivy"
+            else
+              echo "Trivy is up-to-date."
+            fi
+          fi
+
+        continue-on-error: true
+
+      - name: run Trivy scan on SBOM file
+        run: |
+          # output scan to JSON and table Format 
+          trivy sbom $SBOM_ANALYSE_FILE -f json --output $TRIVY_JSON_FILE 
+          echo "Trivy SCA scan completed."
+           
+      - name: processing the trivy scan result
+        run: |
+          # The scan result can be filtered by severity level. The severity level is stored as environment variable in GitHub Settings (i.e. vars.ISSUE_SEVERITY ). 
+          if [ -n "${{ vars.ISSUE_SEVERITY  }}" ]; then
+            empty_issue_list=$(jq '.Results[0].Vulnerabilities[] | select(.Severity | IN(${{ vars.ISSUE_SEVERITY }})) ' $TRIVY_JSON_FILE | wc -l)
+            echo "empty_issue_list=$empty_issue_list" >> $GITHUB_ENV
+            if [ $empty_issue_list != 0 ]; then
+              echo "There are vulnerabilities with severity levels: "${{ vars.ISSUE_SEVERITY  }}"." 
+              jq_filter='.Results[0].Vulnerabilities[] | select(.Severity | IN(${{ vars.ISSUE_SEVERITY }})) | "- The \(.PkgName) library version \(.InstalledVersion) is currently outdated and vulnerable to \(.VulnerabilityID) (\(.Severity) impact) - \(.Title | gsub("\""; ""))."'
+              jq -r "$jq_filter" "$TRIVY_JSON_FILE" > $ANALYSE_FILE 
+              cat $ANALYSE_FILE
+            else 
+              echo "There are no issues with severity levels - "${{ vars.ISSUE_SEVERITY  }}", found in this scan. "
+            fi 
+          else
+            echo "Please customise the severity filtering variable for SCA scan result to the desired level. As of now, the scan results will be filtered to only show CRTICAL or HIGH severity impact only. "
+            empty_issue_list=$(jq '.Results[0].Vulnerabilities[] | select(.Severity | IN("HIGH", "CRITICAL"))' $TRIVY_JSON_FILE | wc -l)
+            echo "empty_issue_list=$empty_issue_list" >> $GITHUB_ENV
+            if [ $empty_issue_list != 0 ]; then
+              jq_filter='.Results[0].Vulnerabilities[] | select(.Severity | IN("HIGH", "CRITICAL")) | "- The \(.PkgName) library version \(.InstalledVersion) is currently outdated and vulnerable to \(.VulnerabilityID) (\(.Severity) impact) - \(.Title | gsub("\""; ""))."'
+              jq -r "$jq_filter" "$TRIVY_JSON_FILE" > $ANALYSE_FILE  
+              cat $ANALYSE_FILE 
+            else 
+              echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
+            fi
+          fi
+
+          echo "- Repository: ${{ github.repository }}\n- Scan Status: Completed\n- Completion Time: $(date)" >> $SUM_FILE
+          echo "- Number of dependencies used by the project: $(jq '.packages | length' $SBOM_ANALYSE_FILE ) " >> $SUM_FILE
+          no_of_vulnerable_dependencies=$(jq '.Results[0].Vulnerabilities[].PkgName' $TRIVY_JSON_FILE | uniq | wc -l) 
+          echo "- Number of vulnerable dependencies detected: $no_of_vulnerable_dependencies " >> $SUM_FILE
+
+      - name: Email the result 
+        if: ${{ env.empty_issue_list != 0 }}
+        run: | 
+          bash -s << 'EOF'
+          
+          EMAIL_BODY=$(printf "${{ vars.EMAIL_BODY  }}")
+ 
+          for text in "${{ vars.EMAILS }}"; do
+            if [[ "$text" != *@fortescue.com* ]]; then
+              echo "Please add list of recipient email in GitHub."
+            else
+              echo "${{ vars.EMAILS }}" | while IFS= read -r line; do
+              aws ses send-email \
+              --from 'application.security@fortescue.com' \
+              --destination "ToAddresses=['$line']" \
+              --message "Subject={Data='Software Composition Analysis Scanning Results'},Body={Text={Data=\"$EMAIL_BODY\"}}" --profile 871866954555.developer-871866954555  
+              done
+            fi
+          done 
+          EOF
+        continue-on-error: true 
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: |
+            ${{ env.TRIVY_JSON_FILE }}
+            ${{ env.TRIVY_TABLE_FILE }}
+            ${{ env.SBOM_ANALYSE_FILE }}
+            ${{ env.DEPENDABOT_FILE }}
+
+      - name: Clean up
+        run: |
+          rm -rf $WORKFLOWDIR
