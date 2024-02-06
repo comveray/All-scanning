@@ -96,3 +96,43 @@ jobs:
           
 
       
+      - name: If leaks found, leave a comment 
+        if: ${{ env.leaks != 0 }}
+        run: |
+          # jq_filter='.[] | "- The \(.RuleID) rule has detected a plain-text \(.Match | split("=")[0] | split("\":")[0]) from \(.StartLine) line to in the \(.File) file."'
+          jq_filter='.[] | "- The \(.RuleID) rule has detected a plain-text \(.Description) in line \(.StartLine) in the \(.File) file."'
+          jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
+
+          COMMENT="Secrets found! Please review the code and redact any plain-text secrets.\n Scan result: \n cat $ANALYSE_FILE  "
+          echo "::set-output name=COMMENT::$COMMENT"
+          echo "Leaving a comment: $COMMENT"
+      
+        continue-on-error: true
+      
+      - name: Post comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '👋 Thanks for reporting!'
+            })
+        env:
+          COMMENT: ${{ steps.leave-comment.outputs.COMMENT }}
+      
+    
+      - name: Upload Artifact
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
+        with:
+          name: ${{ env.ARTIFACT_NAME}}
+          path: ${{ env.ARTIFACT_PATH}}
+    
+          
+
+      - name: Clean up
+        run: |
+          rm -rf $WORKFLOWDIR
+          exit 1
+    
