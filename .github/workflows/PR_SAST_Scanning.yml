@@ -103,7 +103,7 @@ jobs:
         with:
           token: $defect_dojo_token
           defectdojo_url: $defect_dojo_url
-          file: $ARTIFACT_PATH
+          file: ${{ env.ARTIFACT_PATH}} 
           scan_type: Semgrep JSON Report 
           engagement: 6
     

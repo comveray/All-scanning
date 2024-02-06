@@ -1,4 +1,4 @@
-# this is a test for pr GA! Hopedd
+# this is a test for pr GA! 
 def search():
     code = request.args.get('code')
     conn = sqlite3.connect("data.db")
