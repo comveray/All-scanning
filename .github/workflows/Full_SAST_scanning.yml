@@ -27,7 +27,7 @@ jobs:
         run: |
           echo "CODE_SCANNING_FILE=${WORKFLOWDIR}/github_scan_result.json" >> $GITHUB_ENV
           echo "ARTIFACT_PATH=${WORKFLOWDIR}/semgrep_scan_result.json" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME=SAST-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=FMGL-SAST-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
 
           echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
           echo "SUM_FILE=${WORKFLOWDIR}/scan_summary.txt" >> $GITHUB_ENV
@@ -49,6 +49,7 @@ jobs:
       - name: Run full scan with Semgrep 
         run: |
           semgrep scan --json --output $ARTIFACT_PATH --config="p/default"
+          echo "leaks=$(jq length $ARTIFACT_PATH)" >> $GITHUB_ENV
           ls -alh $ARTIFACT_PATH
         continue-on-error: true
       
@@ -82,7 +83,7 @@ jobs:
         continue-on-error: true
 
       - name: Compare Current vs Previous SAST scan result 
-        if: ${{ env.leaks != 0 }} && 
+        if: ${{ env.leaks != 0 }} 
         run: |
           bash -s << 'EOF'
 
@@ -125,23 +126,12 @@ jobs:
             diff_results=$(diff -u "$WORKFLOWDIR/results-prev" "$WORKFLOWDIR/results-current")
             new_vulnerabilities=$(echo "$diff_results" | grep '^+\[' | wc -l)
             echo "- Number of new vulnerabilities in this scan: $new_vulnerabilities" >> $SUM_FILE
+            echo "new_vulnerabilities=$new_vulnerabilities" >> $GITHUB_ENV 
           else
-            echo "This repository has not been scanned previosly."  
-            echo "new_vulnerabilities=$new_vulnerabilities" >> $GITHUB_ENV   
+            echo "This repository has not been scanned previosly."    
           fi
           EOF
         continue-on-error: true 
-        
-      - name: Get GitHub Code Scanning alert if enabled (GitHub Enterprise with GHAS license only)
-        run: |
-          # query the endpoint for repository level
-          curl -L -o $CODE_SCANNING_FILE \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          -H "X-Accepted-GitHub-Permissions: pull_requests=read,contents=read; issues=read,contents=read" \
-          https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts
-        continue-on-error: true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
@@ -151,7 +141,7 @@ jobs:
             ${{ env.CODE_SCANNING_FILE }}
             ${{ env.ARTIFACT_PATH }}
       
-      - name: Email the result (might change to send )
+      - name: Email the result
         if: ${{ env.empty_issue_list != 0 && env.new_vulnerabilities !=0 }}
         run: | 
           bash -s << 'EOF'

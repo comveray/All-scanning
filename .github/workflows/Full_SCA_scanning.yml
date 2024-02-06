@@ -37,7 +37,7 @@ jobs:
 
           echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
           echo "SUM_FILE=${WORKFLOWDIR}/scan_summary.txt" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME=SCA-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=FMGL-SCA-${GITHUB_RUN_ID}-${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Get SPDX SBOM file from dependency graph if enabled 
         run: |
@@ -109,6 +109,7 @@ jobs:
         run: |
           # output scan to JSON and table Format 
           trivy sbom $SBOM_ANALYSE_FILE -f json --output $TRIVY_JSON_FILE 
+          echo "leaks=$(jq length $ARTIFACT_PATH)" >> $GITHUB_ENV
           echo "Trivy SCA scan completed."
            
       - name: processing the trivy scan result
@@ -143,8 +144,59 @@ jobs:
           no_of_vulnerable_dependencies=$(jq '.Results[0].Vulnerabilities[].PkgName' $TRIVY_JSON_FILE | uniq | wc -l) 
           echo "- Number of vulnerable dependencies detected: $no_of_vulnerable_dependencies " >> $SUM_FILE
 
+      - name: Compare Current vs Previous SAST scan result 
+        if: ${{ env.leaks != 0 }} 
+        run: |
+          bash -s << 'EOF'
+
+          # retrieve all artifacts from all GitHub Actions workflows
+          curl -L -o $PREV_ARTIFACTS \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/${{ github.repository }}/actions/artifacts
+          
+          # filter artifacts from SAST workflows only. Then find the most recent artifact for SAST scanning
+          jq '[ .artifacts[] | select(.name | startswith("FMGL-SCA"))]' $PREV_ARTIFACTS > $GITLEAKS_ARTIFACTS
+          echo "list of all SAST-scanning artifacts"
+          cat $GITLEAKS_ARTIFACTS
+          LAST_A=$(jq '.[].created_at' $GITLEAKS_ARTIFACTS | sort -rV | head -n 1)
+          if [ -z $LAST_A ] ; then exit 0 ; fi
+
+          # if recent artifact is found, obtaining the Download URL for the most Recent Artifact
+          echo "Most recent scan with artifact is $LAST_A"
+          A_URL=$(jq '.artifacts[] | select(.created_at == '${LAST_A}') | .archive_download_url' $PREV_ARTIFACTS | tr -d '"')
+          if [ -z $A_URL ] ; then exit 0 ; fi
+          echo "fetching previous scan results:" $LAST_A $A_URL
+          curl -L -o $LAST_ARTIFACT_ZIP \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" $A_URL
+          
+          # if the ZIP file exists, extracts the contents of the ZIP file into that temp directory
+          if [ -e "$LAST_ARTIFACT_ZIP" ]; then
+            PREV_FILENAME=${WORKFLOWDIR}/previous_result.json
+            unzip -p $LAST_ARTIFACT_ZIP > $PREV_FILENAME
+            ls -lah $PREV_FILENAME
+
+            # format findings from previous result ($PREV_FILENAME) and current result ($ARTIFACT_PATH). These findings are sorted and unique results are saved.
+            format_findings(){ jq --compact-output '.[] | [.File , .Secret]' "$1"; }           
+            format_findings $PREV_FILENAME | sort | uniq > $WORKFLOWDIR/results-prev
+            format_findings $ARTIFACT_PATH | sort | uniq > $WORKFLOWDIR/results-current
+  
+            # compare the results from the previous run with the current run
+            diff_results=$(diff -u "$WORKFLOWDIR/results-prev" "$WORKFLOWDIR/results-current")
+            new_vulnerabilities=$(echo "$diff_results" | grep '^+\[' | wc -l)
+            echo "- Number of new vulnerabilities in this scan: $new_vulnerabilities" >> $SUM_FILE
+            echo "new_vulnerabilities=$new_vulnerabilities" >> $GITHUB_ENV  
+          else
+            echo "This repository has not been scanned previosly."   
+          fi
+          EOF
+          continue-on-error: true 
+
       - name: Email the result 
-        if: ${{ env.empty_issue_list != 0 }}
+        if: ${{ env.empty_issue_list != 0 && env.new_vulnerabilities !=0 }}
         run: | 
           bash -s << 'EOF'
           
