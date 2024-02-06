@@ -144,8 +144,8 @@ jobs:
           no_of_vulnerable_dependencies=$(jq '.Results[0].Vulnerabilities[].PkgName' $TRIVY_JSON_FILE | uniq | wc -l) 
           echo "- Number of vulnerable dependencies detected: $no_of_vulnerable_dependencies " >> $SUM_FILE
 
-      - name: Compare Current vs Previous SAST scan result 
-        if: ${{ env.leaks != 0 }} 
+      - name: Compare Current vs Previous SCA scan result 
+        if: ${{ env.empty_issue_list != 0 }} 
         run: |
           bash -s << 'EOF'
 
@@ -195,8 +195,8 @@ jobs:
           EOF
           continue-on-error: true 
 
-      - name: Email the result 
-        if: ${{ env.empty_issue_list != 0 && env.new_vulnerabilities !=0 }}
+      - name: Email the result if there is a new vulnerability detected in this scan 
+        if: ${{ env.new_vulnerabilities !=0 }}
         run: | 
           bash -s << 'EOF'
           

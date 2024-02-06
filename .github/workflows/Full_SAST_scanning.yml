@@ -49,7 +49,6 @@ jobs:
       - name: Run full scan with Semgrep 
         run: |
           semgrep scan --json --output $ARTIFACT_PATH --config="p/default"
-          echo "leaks=$(jq length $ARTIFACT_PATH)" >> $GITHUB_ENV
           ls -alh $ARTIFACT_PATH
         continue-on-error: true
       
@@ -83,7 +82,7 @@ jobs:
         continue-on-error: true
 
       - name: Compare Current vs Previous SAST scan result 
-        if: ${{ env.leaks != 0 }} 
+        if: ${{ env.empty_issue_list != 0 }} 
         run: |
           bash -s << 'EOF'
 
@@ -142,7 +141,7 @@ jobs:
             ${{ env.ARTIFACT_PATH }}
       
       - name: Email the result
-        if: ${{ env.empty_issue_list != 0 && env.new_vulnerabilities !=0 }}
+        if: ${{ env.new_vulnerabilities !=0 }}
         run: | 
           bash -s << 'EOF'
           
