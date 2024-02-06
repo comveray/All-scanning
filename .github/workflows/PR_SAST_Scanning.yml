@@ -71,6 +71,8 @@ jobs:
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
               cat $ANALYSE_FILE    
               # Exit with an error code to mark the check as failed
+              rm -rf $WORKFLOWDIR
+              exit 1 
             else 
               echo "There are no issues with severity levels - "${{ vars.ISSUE_SEVERITY  }}", found in this scan. "
             fi 
@@ -84,59 +86,13 @@ jobs:
               jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE  
               echo $ANALYSE_FILE 
               # Exit with an error code to mark the check as failed
+              rm -rf $WORKFLOWDIR
+              exit 1 
             else 
               echo "There are no issues with severity levels 'HIGH' or 'CRITICAL' found in this scan. "
             fi
           fi
           
-      - name: Upload Artifact
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
-        with:
-          name: ${{ env.ARTIFACT_NAME}}
-          path: ${{ env.ARTIFACT_PATH}}   
+          
 
-      - name: sending data to Defect Dojo
-        env: 
-          defect_dojo_url : ${{ env.DEFECT_DOJO_URL }}
-          defect_dojo_token: ${{ secrets.DEFECT_DOJO_API_TOKEN }}
-        run: |
-          cd $WORKFLOWDIR
-          curl -X 'POST' '$defect_dojo_url' \
-          -H 'accept: application/json' \
-          -H 'Content-Type: multipart/form-data' \
-          -H 'Authorization: Token $defect_dojo_token' \
-          -F 'active=true' \
-          -F 'endpoint_to_add=' \
-          -F 'verified=true' \
-          -F 'close_old_findings=false' \
-          -F 'test_title=' \
-          -F 'engagement_name=Upload import scan' \
-          -F 'build_id=' \
-          -F 'deduplication_on_engagement=' \
-          -F 'push_to_jira=false' \
-          -F 'minimum_severity=Info' \
-          -F 'close_old_findings_product_scope=false' \
-          -F 'scan_date=2024-02-06' \
-          -F 'create_finding_groups_for_all_findings=true' \
-          -F 'engagement_end_date=' \
-          -F 'environment=' \
-          -F 'service=' \
-          -F 'commit_hash=' \
-          -F 'group_by=' \
-          -F 'version=' \
-          -F 'tags=testing' \
-          -F 'api_scan_configuration=' \
-          -F 'product_name=Testing CI/CD integration' \
-          -F 'file=${{ env.ARTIFACT_PATH}};type=application/json' \
-          -F 'auto_create_context=' \
-          -F 'lead=' \
-          -F 'scan_type=Semgrep JSON ' \
-          -F 'branch_tag=test' \
-          -F 'source_code_management_uri=' \
-          -F 'engagement='
-    
-      - name: Clean up
-        run: |
-          rm -rf $WORKFLOWDIR
-          exit 1
-    
+      
