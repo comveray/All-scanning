@@ -137,7 +137,6 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: |
-            ${{ env.CODE_SCANNING_FILE }}
             ${{ env.ARTIFACT_PATH }}
       
       - name: Email the result
