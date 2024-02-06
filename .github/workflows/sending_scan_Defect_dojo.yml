@@ -2,7 +2,7 @@ name: Secret Scanning on PR
 on: 
   #workflow will run whenever a pull request is opened, synchronized(new commit pushed),reopened,or edited  
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [synchronize, reopened, edited]
 
 jobs:
   build:
@@ -12,7 +12,8 @@ jobs:
       github_event_after: ${{ github.event.after }}
       github_sha: ${{ github.sha }}
       github_base_ref: ${{ github.base_ref }}
-      github_pull_request: ${{ github.event.pull_request.head.ref }}
+      github_pull_request_branch: ${{ github.event.pull_request.head.ref }}
+      github_pull_request_number: ${{ github.event.pull_request.number }}
       github_event: ${{ github.event_name }}
 
     steps:
@@ -44,19 +45,69 @@ jobs:
           bash -s << 'EOF'
           if [ $github_event == "pull_request" ]; then
             # Fetch the changes made in the pull request
-            git fetch origin $github_base_ref $github_pull_request --depth=1   
+            git fetch origin pull/$github_pull_request_number/head:$github_pull_request_branch --depth=1   
             gitleaks detect --source . --log-opts="$github_event_before..$github_event_after" -r $ARTIFACT_PATH
             echo "leaks=$(jq length $ARTIFACT_PATH)" >> $GITHUB_ENV
           fi
           EOF
         continue-on-error: true
 
-      - name: If leaks found, 
+      - name: If leaks found
         if: ${{ env.leaks != 0 }}
         run: |
           # jq_filter='.[] | "- The \(.RuleID) rule has detected a plain-text \(.Match | split("=")[0] | split("\":")[0]) from \(.StartLine) line to in the \(.File) file."'
           jq_filter='.[] | "- The \(.RuleID) rule has detected a plain-text \(.Description) in line \(.StartLine) in the \(.File) file."'
           jq -r "$jq_filter" "$ARTIFACT_PATH" > $ANALYSE_FILE 
+        continue-on-error: true
+    
+      - name: Upload Artifact
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
+        with:
+          name: ${{ env.ARTIFACT_NAME}}
+          path: ${{ env.ARTIFACT_PATH}}   
+
+      - name: sending data to Defect Dojo
+        env: 
+          defect_dojo_url : ${{ env.DEFECT_DOJO_URL }}
+          defect_dojo_token: ${{ secrets.DEFECT_DOJO_API_TOKEN }}
+        run: |
+          cd $WORKFLOWDIR
+          curl -X 'POST' '$defect_dojo_url' \
+          -H 'accept: application/json' \
+          -H 'Content-Type: multipart/form-data' \
+          -H 'Authorization: Token $defect_dojo_token' \
+          -F 'active=true' \
+          -F 'endpoint_to_add=' \
+          -F 'verified=true' \
+          -F 'close_old_findings=false' \
+          -F 'test_title=' \
+          -F 'engagement_name=Upload import scan' \
+          -F 'build_id=' \
+          -F 'deduplication_on_engagement=' \
+          -F 'push_to_jira=false' \
+          -F 'minimum_severity=Info' \
+          -F 'close_old_findings_product_scope=false' \
+          -F 'scan_date=2024-02-06' \
+          -F 'create_finding_groups_for_all_findings=true' \
+          -F 'engagement_end_date=' \
+          -F 'environment=' \
+          -F 'service=' \
+          -F 'commit_hash=' \
+          -F 'group_by=' \
+          -F 'version=' \
+          -F 'tags=testing' \
+          -F 'api_scan_configuration=' \
+          -F 'product_name=Testing CI/CD integration' \
+          -F 'file=${{ env.ARTIFACT_PATH}};type=application/json' \
+          -F 'auto_create_context=' \
+          -F 'lead=' \
+          -F 'scan_type=Gitleaks Scan' \
+          -F 'branch_tag=test' \
+          -F 'source_code_management_uri=' \
+          -F 'engagement='
+
+      - name: Clean up
+        run: |
           rm -rf $WORKFLOWDIR
           exit 1
     
