@@ -24,6 +24,7 @@ jobs:
           SCANFILE="trivy-results.sarif"
           APP_ID=1-7ebcefce49131f45739a
           curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"$APP_ID","ext":"sarif"}' $LAMBDA_URL
+          cat $TMPFILE
           URL=`jq -r ".url" "$TMPFILE"`
           KEY=`jq -r ".fields.key" "$TMPFILE"`
           DATA=""
