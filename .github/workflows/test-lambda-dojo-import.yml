@@ -34,7 +34,7 @@ jobs:
             PARAM=$(echo $FIELD|tr -d '"')"="$(jq -r ".fields.$FIELD" $TMPFILE)
             DATA=$DATA" -F $PARAM"
           done
-          echo $DATA
+          echo $DATA x
           rm $TMPFILE
           TMPUPLOAD="/tmp/$KEY"
           cp "$SCANFILE"  $TMPUPLOAD
