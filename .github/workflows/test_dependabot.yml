@@ -34,7 +34,7 @@ jobs:
           LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
           SCANFILE="dependabot-results.json"
           APP_ID=1-7ebcefce49131f45739a
-          echo "run curl"
+
           curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
           echo "TMPFILE is"
           cat $TMPFILE
@@ -50,7 +50,7 @@ jobs:
             DATA=$DATA" -F $PARAM"
           done
 
-          echo "constructs a string (`DATA`)"
+          echo "constructs a string DATA"
           echo $DATA x
           rm $TMPFILE
           TMPUPLOAD="/tmp/$KEY"

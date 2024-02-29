@@ -223,7 +223,6 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           path: |
             ${{ env.TRIVY_JSON_FILE }}
-            ${{ env.TRIVY_TABLE_FILE }}
             ${{ env.SBOM_ANALYSE_FILE }}
             ${{ env.DEPENDABOT_FILE }}
 
