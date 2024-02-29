@@ -12,6 +12,7 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+          repositories: "All-scanning"
 
       - name: Run Commands inside Docker Container. Get dependabot alert if enabled
         run: |
