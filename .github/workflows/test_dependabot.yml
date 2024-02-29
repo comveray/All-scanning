@@ -16,11 +16,14 @@ jobs:
 
       - name: Run Commands inside Docker Container. Get dependabot alert if enabled
         run: |
-          curl --request GET -L -o $DEPENDABOT_FILE \
+          curl --request GET -L -o dependabot-results.json \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ steps.app-token.outputs.token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/${{ github.repository }}/dependabot/alerts
+          
+          ls -lah 
+          cat dependabot-results.json
 
           # upload-results-s3.sh $RUNNER_TEMP/output.sarif
       
