@@ -144,6 +144,15 @@ jobs:
           no_of_vulnerable_dependencies=$(jq '.Results[0].Vulnerabilities[].PkgName' $TRIVY_JSON_FILE | uniq | wc -l) 
           echo "- Number of vulnerable dependencies detected: $no_of_vulnerable_dependencies " >> $SUM_FILE
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: |
+            ${{ env.TRIVY_JSON_FILE }}
+            ${{ env.SBOM_ANALYSE_FILE }}
+            ${{ env.DEPENDABOT_FILE }}
+  
       - name: Compare Current vs Previous SCA scan result 
         if: ${{ env.empty_issue_list != 0 }} 
         run: |
@@ -217,14 +226,6 @@ jobs:
           EOF
         continue-on-error: true 
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: |
-            ${{ env.TRIVY_JSON_FILE }}
-            ${{ env.SBOM_ANALYSE_FILE }}
-            ${{ env.DEPENDABOT_FILE }}
 
       - name: Clean up
         run: |
