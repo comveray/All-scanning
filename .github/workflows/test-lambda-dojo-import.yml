@@ -1,5 +1,5 @@
 name: Test AWS Lambda DefectDojo Import via S3
-on: push
+on: workflow_dispatch
 jobs:
   build:
     name: Build

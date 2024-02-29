@@ -1,0 +1,52 @@
+name: Dependabot in Actions
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate IAT for Github App
+        uses: actions/create-github-app-token@c4fa18d55c5d49e6a2793e351ea4938322c61072 #v1
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Run Commands inside Docker Container. Get dependabot alert if enabled
+        run: |
+          curl --request GET -L -o $DEPENDABOT_FILE \
+          --url https://api.github.com/repos/${{ github.repository }}/dependabot/alerts \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ steps.app-token.outputs.token }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28"
+
+          # upload-results-s3.sh $RUNNER_TEMP/output.sarif
+      
+      - name: upload SARIF
+        run: |
+          bash -s << 'EOF'
+          TMPFILE=$(mktemp)
+          LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
+          SCANFILE="dependabot-results.json"
+          APP_ID=1-7ebcefce49131f45739a
+          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
+          cat $TMPFILE
+          URL=`jq -r ".url" "$TMPFILE"`
+          KEY=`jq -r ".fields.key" "$TMPFILE"`
+          DATA=""
+          for FIELD in `jq ".fields | keys[]" "$TMPFILE"`
+          do
+            if [[ "$FIELD" == "\"key\"" ]] ; then continue; fi
+            PARAM=$(echo $FIELD|tr -d '"')"="$(jq -r ".fields.$FIELD" $TMPFILE)
+            DATA=$DATA" -F $PARAM"
+          done
+          echo $DATA x
+          rm $TMPFILE
+          TMPUPLOAD="/tmp/$KEY"
+          cp "$SCANFILE"  $TMPUPLOAD
+          curl -k -v -L -F "key=$KEY" $DATA -F "file=@$TMPUPLOAD" $URL
+          rm $TMPUPLOAD
+          EOF
