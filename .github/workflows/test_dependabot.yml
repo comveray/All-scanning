@@ -27,7 +27,7 @@ jobs:
 
           # upload-results-s3.sh $RUNNER_TEMP/output.sarif
       
-      - name: upload SARIF
+      - name: upload jSON
         run: |
           bash -s << 'EOF'
           TMPFILE=$(mktemp)

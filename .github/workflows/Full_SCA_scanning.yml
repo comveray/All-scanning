@@ -33,7 +33,7 @@ jobs:
           echo "DEPENDABOT_FILE=${WORKFLOWDIR}/dependabot_alerts.json" >> $GITHUB_ENV
 
           echo "TRIVY_JSON_FILE=${WORKFLOWDIR}/trivy_scan_json_result.json" >> $GITHUB_ENV
-          echo "TRIVY_TABLE_FILE=${WORKFLOWDIR}/trivy_scan_table_result.txt" >> $GITHUB_ENV
+          echo "TRIVY_TABLE_FILE=${WORKFLOWDIR}/trivy_scan_table_result.sarif" >> $GITHUB_ENV
 
           echo "ANALYSE_FILE=${WORKFLOWDIR}/analyse_current_results.txt" >> $GITHUB_ENV
           echo "SUM_FILE=${WORKFLOWDIR}/scan_summary.txt" >> $GITHUB_ENV
@@ -109,6 +109,7 @@ jobs:
         run: |
           # output scan to JSON and table Format 
           trivy sbom $SBOM_ANALYSE_FILE -f json --output $TRIVY_JSON_FILE 
+          trivy sbom $SBOM_ANALYSE_FILE -f sarif --output $TRIVY_TABLE_FILE 
           echo "leaks=$(jq length $ARTIFACT_PATH)" >> $GITHUB_ENV
           echo "Trivy SCA scan completed."
            
@@ -150,6 +151,7 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           path: |
             ${{ env.TRIVY_JSON_FILE }}
+            ${{ env.TRIVY_TABLE_FILE }}
             ${{ env.SBOM_ANALYSE_FILE }}
             ${{ env.DEPENDABOT_FILE }}
   

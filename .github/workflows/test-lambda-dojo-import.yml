@@ -41,3 +41,8 @@ jobs:
           curl -k -v -L -F "key=$KEY" $DATA -F "file=@$TMPUPLOAD" $URL
           rm $TMPUPLOAD
           EOF
+    - name: Upload Artifact
+      uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 #v2
+      with:
+        name: trivy-results.sarif
+        path: trivy-results.sarif
