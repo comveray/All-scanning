@@ -13,17 +13,17 @@ jobs:
       with:
         scan-type: 'fs'
         scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+        format: 'json'
+        output: 'trivy-results.json'
 
     - name: upload SARIF
       run: |
           bash -s << 'EOF'
           TMPFILE=$(mktemp)
           LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
-          SCANFILE="trivy-results.sarif"
+          SCANFILE="trivy-results.json"
           APP_ID=1-7ebcefce49131f45739a
-          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"sarif"}' $LAMBDA_URL
+          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
           cat $TMPFILE
           URL=`jq -r ".url" "$TMPFILE"`
           KEY=`jq -r ".fields.key" "$TMPFILE"`

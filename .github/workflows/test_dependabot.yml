@@ -38,8 +38,7 @@ jobs:
           curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
           echo "TMPFILE is"
           cat $TMPFILE
-
-          echo "Iterates over the keys in the "fields" section of the response"
+          
           URL=`jq -r ".url" "$TMPFILE"`
           KEY=`jq -r ".fields.key" "$TMPFILE"`
           DATA=""
@@ -48,9 +47,6 @@ jobs:
             if [[ "$FIELD" == "\"key\"" ]] ; then continue; fi
             PARAM=$(echo $FIELD|tr -d '"')"="$(jq -r ".fields.$FIELD" $TMPFILE)
             DATA=$DATA" -F $PARAM"
-          done
-
-          echo "constructs a string DATA"
           echo $DATA x
           rm $TMPFILE
           TMPUPLOAD="/tmp/$KEY"
