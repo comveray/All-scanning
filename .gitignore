@@ -68,3 +68,4 @@ config/*.yml
 #test file
 /.github/workflow/JWT_gen.sh 
 octo.js
+generatehmac.py
