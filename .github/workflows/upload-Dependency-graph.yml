@@ -28,7 +28,7 @@ jobs:
         fi
         
         ls -lah $GITHUB_WORKSPACE
-        cat sbom.json
+        cat $RUNNER_TEMP/sbom.json
         #upload-results-s3.sh $RUNNER_TEMP/sbom.json
 
     - name: upload jSON
