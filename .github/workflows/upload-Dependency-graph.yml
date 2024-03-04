@@ -36,11 +36,10 @@ jobs:
           bash -s << 'EOF'
           TMPFILE=$(mktemp)
           LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
-          SCANFILE="dependabot-results.json"
+          SCANFILE="sbom.json"
           APP_ID=12-1b77fa5ce74f4907f379
 
-          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"sarif"}' $LAMBDA_URL
-          echo "TMPFILE is"
+          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
           cat $TMPFILE
           URL=`jq -r ".url" "$TMPFILE"`
           KEY=`jq -r ".fields.key" "$TMPFILE"`
@@ -50,6 +49,7 @@ jobs:
             if [[ "$FIELD" == "\"key\"" ]] ; then continue; fi
             PARAM=$(echo $FIELD|tr -d '"')"="$(jq -r ".fields.$FIELD" $TMPFILE)
             DATA=$DATA" -F $PARAM"
+          done
           echo $DATA x
           rm $TMPFILE
           TMPUPLOAD="/tmp/$KEY"
