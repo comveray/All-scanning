@@ -39,7 +39,7 @@ jobs:
           SCANFILE="dependabot-results.json"
           APP_ID=12-1b77fa5ce74f4907f379
 
-          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
+          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"sarif"}' $LAMBDA_URL
           echo "TMPFILE is"
           cat $TMPFILE
           URL=`jq -r ".url" "$TMPFILE"`
