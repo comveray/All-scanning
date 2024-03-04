@@ -4,17 +4,12 @@ on: push
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container: 
-      image: zerosource/dojo-s3import-github-dependabot-and-dependency-graph
-      env:
-        LAMBDA_URL: ${{ secrets.LAMBDA_URL }}
-        APP_ID: ${{ secrets.APP_ID_SEMGREP }}
-        
-    steps:
+   name: Build
+   runs-on: ubuntu-latest
+   steps:
     - uses: actions/checkout@v2
 
-    - name: Run Commands inside Docker Container. Get dependabot alert if enabled
+    - name: Run Commands inside Docker Container. Get dg alert if enabled
       run: |
         response=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom)
         if [[ $response != 200 ]]; then
@@ -33,14 +28,14 @@ jobs:
         fi
         
         ls -lah $GITHUB_WORKSPACE
-        #upload-results-s3.sh $RUNNER_TEMP/dependabot-results.json
+        #upload-results-s3.sh $RUNNER_TEMP/sbom.json
 
     - name: upload jSON
       run: |
         bash -s << 'EOF'
         TMPFILE=$(mktemp)
         LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
-        SCANFILE="dependabot-results.json"
+        SCANFILE="sbom.json"
         APP_ID=12-1b77fa5ce74f4907f379
 
         curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
