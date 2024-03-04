@@ -23,8 +23,8 @@ jobs:
           https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom
 
           # parsing the fetched SBOM JSON file and transforming it into SPDX SBOM format so trivy can process
-          cat $SBOM_FILE  | jq '.sbom' > $SBOM_ANALYSE_FILE
-          sed -i -e '${/^$/d;}' $SBOM_ANALYSE_FILE
+          cat $RUNNER_TEMP/sbom.json | jq '.sbom' > $RUNNER_TEMP/sbom.json
+          sed -i -e '${/^$/d;}' $RUNNER_TEMP/sbom.json
         fi
         
         ls -lah $GITHUB_WORKSPACE
