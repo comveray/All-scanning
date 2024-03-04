@@ -1,0 +1,63 @@
+name: Dependency graph Docker in Actions
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: 
+      image: zerosource/dojo-s3import-github-dependabot-and-dependency-graph
+      env:
+        LAMBDA_URL: ${{ secrets.LAMBDA_URL }}
+        APP_ID: ${{ secrets.APP_ID_SEMGREP }}
+        
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Commands inside Docker Container. Get dependabot alert if enabled
+      run: |
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom)
+        if [[ $response != 200 ]]; then
+          echo "Please enable Dependency graph for this repo"
+        else
+          # get Dependency Graph SBOM
+          curl -L -o $RUNNER_TEMP/sbom.json \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom
+
+          # parsing the fetched SBOM JSON file and transforming it into SPDX SBOM format so trivy can process
+          cat $SBOM_FILE  | jq '.sbom' > $SBOM_ANALYSE_FILE
+          sed -i -e '${/^$/d;}' $SBOM_ANALYSE_FILE
+        fi
+        
+        ls -lah $GITHUB_WORKSPACE
+        #upload-results-s3.sh $RUNNER_TEMP/dependabot-results.json
+
+    - name: upload jSON
+      run: |
+        bash -s << 'EOF'
+        TMPFILE=$(mktemp)
+        LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
+        SCANFILE="dependabot-results.json"
+        APP_ID=12-1b77fa5ce74f4907f379
+
+        curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
+        echo "TMPFILE is"
+        cat $TMPFILE
+        URL=`jq -r ".url" "$TMPFILE"`
+        KEY=`jq -r ".fields.key" "$TMPFILE"`
+        DATA=""
+        for FIELD in `jq ".fields | keys[]" "$TMPFILE"`
+        do
+        if [[ "$FIELD" == "\"key\"" ]] ; then continue; fi
+        PARAM=$(echo $FIELD|tr -d '"')"="$(jq -r ".fields.$FIELD" $TMPFILE)
+        DATA=$DATA" -F $PARAM"
+        echo $DATA x
+        rm $TMPFILE
+        TMPUPLOAD="/tmp/$KEY"
+        cp "$SCANFILE"  $TMPUPLOAD
+        curl -k -v -L -F "key=$KEY" $DATA -F "file=@$TMPUPLOAD" $URL
+        rm $TMPUPLOAD
+        EOF
