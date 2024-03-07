@@ -11,6 +11,7 @@ jobs:
 
     - name: Run Commands inside Docker Container. Get dg alert if enabled
       run: |
+        # fetch the dependency graph SPDX SBOM JSON file
         response=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom)
         if [[ $response != 200 ]]; then
           echo "Please enable Dependency graph for this repo"
@@ -26,34 +27,25 @@ jobs:
           cat $RUNNER_TEMP/sbom.json | jq '.sbom' > $RUNNER_TEMP/sbom.json
           sed -i -e '${/^$/d;}' $RUNNER_TEMP/sbom.json
         fi
-        
+
+        # modify the SPDX JSON into DD generic finding format
+        jq -c ' {findings: [ .packages[] |{
+          title: "\(.name) \(.versionInfo)",
+          active: true,
+          verified: true,
+          description: "N/A",
+          severity: "Info",
+          mitigation: "N/A",
+          date: "2024-04-22",
+          cve: 0,
+          cwe: 0,
+          cvssv3: "N/A",
+          file_path: null,
+          line: 11,
+          "vuln_id_from_tool": .SPDXID,
+        }]}' $RUNNER_TEMP/sbom.json > $RUNNER_TEMP/sbom_generic.json
+
+        # Check SBOM file 
         ls -lah $GITHUB_WORKSPACE
-        cat $RUNNER_TEMP/sbom.json
-        #upload-results-s3.sh $RUNNER_TEMP/sbom.json
-
-    - name: upload jSON
-      run: |
-          bash -s << 'EOF'
-          TMPFILE=$(mktemp)
-          LAMBDA_URL="https://l50foyl8nb.execute-api.ap-southeast-2.amazonaws.com/dev"          
-          SCANFILE="sbom.json"
-          APP_ID=12-1b77fa5ce74f4907f379
-
-          curl -k -o "$TMPFILE" -X POST -H 'content-type: application/json'  -d '{"app_id":"'$APP_ID'","ext":"json"}' $LAMBDA_URL
-          cat $TMPFILE
-          URL=`jq -r ".url" "$TMPFILE"`
-          KEY=`jq -r ".fields.key" "$TMPFILE"`
-          DATA=""
-          for FIELD in `jq ".fields | keys[]" "$TMPFILE"`
-          do
-            if [[ "$FIELD" == "\"key\"" ]] ; then continue; fi
-            PARAM=$(echo $FIELD|tr -d '"')"="$(jq -r ".fields.$FIELD" $TMPFILE)
-            DATA=$DATA" -F $PARAM"
-          done
-          echo $DATA x
-          rm $TMPFILE
-          TMPUPLOAD="/tmp/$KEY"
-          cp "$SCANFILE"  $TMPUPLOAD
-          curl -k -v -L -F "key=$KEY" $DATA -F "file=@$TMPUPLOAD" $URL
-          rm $TMPUPLOAD
-          EOF
+        cat $RUNNER_TEMP/sbom_generic.json
+        upload-results-s3.sh $RUNNER_TEMP/sbom_generic.json

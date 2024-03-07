@@ -23,7 +23,21 @@ jobs:
           https://api.github.com/repos/${{ github.repository }}/dependabot/alerts
           
           ls -lah 
-          cat dependabot-results.json
+          # modify the dependabot JSON into DD generic finding format
+          jq -c ' {findings:  map({
+            title: "\(.dependency.package.ecosystem):\(.security_vulnerability.package.name) \(.security_vulnerability.vulnerable_version_range)",
+            active: true,
+            verified: true,
+            description: .security_advisory.description,
+            severity: (.security_advisory.severity | ascii_upcase[:1] + ascii_downcase[1:]),
+            mitigation: "N/A",
+            date: "2024-04-22",
+            cve: .security_advisory.cve_id,
+            cwe: (.security_advisory.cwes[].cwe_id // "" | sub("CWE-"; "") | tonumber),
+            cvssv3: .security_advisory.cvss.vector_string,
+            file_path: .dependency.manifest_path,
+            line: 11
+          })}' $RUNNER_TEMP/dependabot-results.json > $RUNNER_TEMP/dependabot-result-generic.json
 
           # upload-results-s3.sh $RUNNER_TEMP/output.sarif
       
