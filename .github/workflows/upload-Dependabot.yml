@@ -32,7 +32,7 @@ jobs:
         https://api.github.com/repos/${{ github.repository }}/dependabot/alerts
         
         echo "check if file saved"
-        la -lah $GITHUB_WORKSPACE
+        ls -lah $GITHUB_WORKSPACE
 
         # modify the dependabot JSON into DD generic finding format
         echo "transform to generic report format"
