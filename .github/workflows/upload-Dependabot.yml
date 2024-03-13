@@ -51,8 +51,6 @@ jobs:
           line: 11
         })}' $GITHUB_WORKSPACE/dependabot-results.json > $GITHUB_WORKSPACE/dependabot-result-generic.json
         
-        echo "checking the file"
         ls -lah $GITHUB_WORKSPACE
-        cat $GITHUB_WORKSPACE/dependabot-result-generic.json
-        #upload-results-s3.sh $RUNNER_TEMP/dependabot-result-generic.json
+        upload-results-s3.sh $RUNNER_TEMP/dependabot-result-generic.json
 
