@@ -47,5 +47,6 @@ jobs:
         })}' $RUNNER_TEMP/dependabot-results.json > $RUNNER_TEMP/dependabot-result-generic.json
         
         ls -lah $GITHUB_WORKSPACE
-        upload-results-s3.sh $RUNNER_TEMP/dependabot-result-generic.json
+        cat $RUNNER_TEMP/dependabot-result-generic.json
+        #upload-results-s3.sh $RUNNER_TEMP/dependabot-result-generic.json
 
