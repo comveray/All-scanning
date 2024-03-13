@@ -1,6 +1,6 @@
 name: Dependabot Docker in Actions
 
-on: workflow_dispatch
+on: push
 
 jobs:
   build:
