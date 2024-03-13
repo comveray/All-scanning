@@ -1,0 +1,30 @@
+name: Zap Proxy Docker Container in Actions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run_semgrep:
+    runs-on: ubuntu-latest
+    container: 
+      image: zerosource/dojo-s3import-zap-proxy
+      env:
+        LAMBDA_URL: ${{ secrets.LAMBDA_URL }}
+        APP_ID: ${{ secrets.APP_ID_TRIVY }}
+        
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Commands inside Docker Container
+      run: |
+        status_code=$(curl -LI http://$(ipconfig getifaddr en0):3000 -o /dev/null -w '%{http_code}\n' -s)
+        if [ $status_code -eq 200 ]; then
+            echo "The application is running."
+            cd $WORKFLOWDIR
+            docker run -v $(pwd):/zap/wrk/:rw -t softwaresecurityproject/zap-stable:latest zap-full-scan.py \
+            -t http://$(ipconfig getifaddr en0):3000 -d -D 4 -g gen.conf -r $RUNNER_TEMP/zap_output.sarif $GITHUB_WORKSPACE
+        else 
+            echo "The application is not reachable. Please check the application."
+        fi
+
+        upload-results-s3.sh $RUNNER_TEMP/zap_output.sarif
