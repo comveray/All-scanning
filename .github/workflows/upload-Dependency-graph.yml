@@ -47,6 +47,8 @@ jobs:
           "vuln_id_from_tool": .SPDXID,
         }]}' $GITHUB_WORKSPACE/sbom.json > $GITHUB_WORKSPACE/sbom_generic.json
 
-        # Check SBOM file 
+        # Check SBOM file
+        echo "checking report" 
         ls -lah $GITHUB_WORKSPACE
+        echo "uploading file"
         upload-results-s3.sh $RUNNER_TEMP/sbom_generic.json

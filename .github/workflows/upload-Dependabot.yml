@@ -53,5 +53,6 @@ jobs:
         
         echo "checking the file"
         ls -lah $GITHUB_WORKSPACE
+        echo "uploading file"
         upload-results-s3.sh $RUNNER_TEMP/dependabot-result-generic.json
 
