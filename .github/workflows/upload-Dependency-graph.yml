@@ -17,18 +17,18 @@ jobs:
     - name: Run Commands inside Docker Container. Get dg alert if enabled
       run: |
         # fetch the dependency graph SPDX SBOM JSON file
-        curl -L -o $GITHUB_WORKSPACE/dg-sbom.json \
+        curl -L -o $RUNNER_TEMP/dg-sbom.json \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         https://api.github.com/repos/${{ github.repository }}/dependency-graph/sbom
 
         echo "check if file saved"
-        ls -lah $GITHUB_WORKSPACE
+        ls -lah $RUNNER_TEMP
 
         # parsing the fetched SBOM JSON file and transforming it into SPDX SBOM format so trivy can process
-        cat $GITHUB_WORKSPACE/dg-sbom.json | jq '.sbom' > $GITHUB_WORKSPACE/sbom.json
-        sed -i -e '${/^$/d;}' $GITHUB_WORKSPACE/sbom.json
+        cat $RUNNER_TEMP/dg-sbom.json | jq '.sbom' > $RUNNER_TEMP/sbom.json
+        sed -i -e '${/^$/d;}' $RUNNER_TEMP/sbom.json
 
         # modify the SPDX JSON into DD generic finding format
         jq -c ' {findings: [ .packages[] |{
@@ -45,10 +45,10 @@ jobs:
           file_path: null,
           line: 11,
           "vuln_id_from_tool": .SPDXID,
-        }]}' $GITHUB_WORKSPACE/sbom.json > $GITHUB_WORKSPACE/sbom_generic.json
+        }]}' $RUNNER_TEMP/sbom.json > $RUNNER_TEMP/sbom_generic.json
 
         # Check SBOM file
         echo "checking report" 
-        ls -lah $GITHUB_WORKSPACE
+        ls -lah $RUNNER_TEMP
         echo "uploading file"
         upload-results-s3.sh $RUNNER_TEMP/sbom_generic.json
