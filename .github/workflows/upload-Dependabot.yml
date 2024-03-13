@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: zerosource/dojo-s3import-github-dependabot-and-dependency-graph
+      image: zerosource/dojo-s3import-github-ddt
       env:
         LAMBDA_URL: ${{ secrets.LAMBDA_URL }}
         APP_ID: ${{ secrets.APP_ID_SEMGREP }}
