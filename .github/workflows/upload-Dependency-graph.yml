@@ -40,7 +40,7 @@ jobs:
         }]}' $RUNNER_TEMP/sbom.json > $RUNNER_TEMP/sbom_generic.json
 
         # Check SBOM file 
-        ls -lah $GITHUB_WORKSPACE
+        #ls -lah $GITHUB_WORKSPACE
         ls -lah $RUNNER_TEMP
         cat $RUNNER_TEMP/sbom_generic.json
         #upload-results-s3.sh $RUNNER_TEMP/sbom_generic.json
