@@ -42,5 +42,5 @@ jobs:
         # Check SBOM file 
         #ls -lah $GITHUB_WORKSPACE
         ls -lah $RUNNER_TEMP
-        cat $RUNNER_TEMP/sbom_generic.json
+        echo $RUNNER_TEMP/sbom_generic.json
         #upload-results-s3.sh $RUNNER_TEMP/sbom_generic.json
