@@ -1,6 +1,6 @@
 name: Dependency graph Docker in Actions
 
-on: push
+on: workflow_dispatch
 
 jobs:
   build:
