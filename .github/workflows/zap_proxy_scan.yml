@@ -16,32 +16,24 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Run Commands inside Docker Container
-      run: |
-        # Scanning an app running on the host OS
-        status_code=$(curl -LI http://$(ipconfig getifaddr en0):3000 -o /dev/null -w '%{http_code}\n' -s)
-        if [ $status_code -eq 200 ]; then
-            echo "The application is running."
-            docker run -v $(pwd):/zap/wrk/:rw -t softwaresecurityproject/zap-stable:latest zap-full-scan.py \
-            -t http://$(ipconfig getifaddr en0):65412 -d -D 4 -g gen.conf -x $RUNNER_TEMP/zap_output.xml
-        else 
-            echo "The application is not reachable. Please check the application."
-        fi
-
-        # scan external app (internet accessible)
-        
-
+      run: |  
+        IP=$(ipconfig getifaddr en0)
         for text in "${{ vars.URLs }}"; do
-            if [[ "$text" != *.com* ]]; then
-              echo "Please add list of scanning URLs in GitHub Action variables."
-            else
-              echo "${{ vars.URLs }}" | while IFS= read -r line; do
+            if ! [[ "$text" =~ ^(https?):// ]]; then
+              echo "Please add a list of valid scanning URLs in GitHub Action variables."
+            elif [[ "$text" =~ ^https?://(localhost|0.0.0.0|127.0.0.1) ]]; then
+              echo "The URL '$text' is a localhost URL. Scanning '$text ..."
+              new_url="${text//localhost/$IP}"
+              new_url="${new_url//127.0.0.1/$IP}"
+              new_url="${new_url//0.0.0.0/$IP}"
               docker run -v $(pwd):/zap/wrk/:rw -t softwaresecurityproject/zap-stable:latest zap-full-scan.py \
-              -t $line -d -D 4 -g gen.conf -x $RUNNER_TEMP/zap_output.xml
-              done
+              -t "$new_url" -d -D 4 -g gen.conf -x $RUNNER_TEMP/zap_output.xml
+            else
+              echo "The URL '$text' isan external app. Scanning '$text ..."
+              docker run -v $(pwd):/zap/wrk/:rw -t softwaresecurityproject/zap-stable:latest zap-full-scan.py \
+              -t "$text" -d -D 4 -g gen.conf -x "$RUNNER_TEMP/zap_output.xml"
             fi
           done 
 
-        mv $RUNNER_TEMP/zap_output.xml $RUNNER_TEMP/zap_output.zapx
-
-
-        upload-results-s3.sh $RUNNER_TEMP/zap_output.zapx
+        #mv $RUNNER_TEMP/zap_output.xml $RUNNER_TEMP/zap_output.xml
+        upload-results-s3.sh $RUNNER_TEMP/zap_output.xml
